@@ -140,6 +140,30 @@ app.get('/auth/logout', function(req, res){
 //   }
 //   res.send('Who are you? <a href="/auth/login">login</a>');
 // });
+passport.use(new LocalStrategy(
+  function(username, password, done) {
+      var uname = username;
+      var pwd = password;
+      for (var i = 0; i < users.length; i++) {
+        var user = users[i];
+        if(uname === user.username) {
+         return hasher({password:pwd, salt:user.salt}, function(err, pass, salt, hash){
+           if(hash === user.password){
+             done(null, user);
+             // req.session.displayName = user.displayName;
+             // req.session.save(function(){
+             //   res.redirect('/welcome');
+             // })
+           } else {
+             done(null, false)
+             // res.send('Who are you? <a href="/auth/login">login</a>');
+           }
+          });
+        }
+      }
+      done(null, false);
+  }
+));
 
 app.post(
   '/auth/login',
@@ -148,9 +172,10 @@ app.post(
     {
       successRedirect: '/welcome',
       failureRedirect: '/auth/login',
+      failureFlash: false
     }
   )
-}
+);
 
 
 app.get('/auth/login', function(req, res){
