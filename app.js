@@ -51,9 +51,9 @@ var users = [
 ];
 
 app.get('/welcome', function(req, res){
-  if(req.session.displayName) {
+  if(req.user && req.user.displayName) {
     res.send(`
-      <h1>Hello, ${req.session.displayName}</h1>
+      <h1>Hello, ${req.user.displayName}</h1>
       <a href="/auth/logout">logout</a>
     `);
   } else {
@@ -73,9 +73,10 @@ app.post('/auth/register', function(req, res){
       displayName:req.body.displayName
     };
     users.push(user);
-    req.session.displayName = req.body.displayName;
-    req.session.save(function(){
-      res.redirect('/welcome');
+    req.login(user, function(err){
+      req.session.save(function(){
+        res.redirect('/welcome');
+      });
     });
   });
 });
@@ -114,8 +115,10 @@ app.get('/auth/register', function(req, res){
 
 
 app.get('/auth/logout', function(req, res){
-  delete req.session.displayName;
-  res.redirect('/');
+  req.logout();
+  req.session.save(function(){
+    res.redirect('/');
+  })
 });
 
 
@@ -140,6 +143,26 @@ app.get('/auth/logout', function(req, res){
 //   }
 //   res.send('Who are you? <a href="/auth/login">login</a>');
 // });
+
+
+
+passport.serializeUser(function(user, done) {
+  console.log('serializeUser', user);
+  done(null, user.username);//user.username이 세션에 저장됨
+});
+
+//다시 사용자가 들어올 때마다 저장된 사용자의 식별자가 id 로 들어감
+passport.deserializeUser(function(id, done) {
+  console.log('deserializeUser', id);
+  for (var i = 0; i < users.length; i++) {
+    var user = users[i];
+    //username사용자를 검색해서 사용자 정보를 전달 ?
+    if(user.username == id){
+      return done(null, user);
+    }
+  }
+});
+
 passport.use(new LocalStrategy(
   function(username, password, done) {
       var uname = username;
@@ -147,9 +170,11 @@ passport.use(new LocalStrategy(
       for (var i = 0; i < users.length; i++) {
         var user = users[i];
         if(uname === user.username) {
-         return hasher({password:pwd, salt:user.salt}, function(err, pass, salt, hash){
+         return hasher({password:pwd, salt:user.salt},
+           function(err, pass, salt, hash){
            if(hash === user.password){
-             done(null, user);
+             console.log('LocalStrategy', user);
+             done(null, user); //두번째 인자가 false가 아니면 serializeUser 콜백 함수가 실행이 됨 ->두번째 인자를 deserializeUser의 첫번째 인자로 전달
              // req.session.displayName = user.displayName;
              // req.session.save(function(){
              //   res.redirect('/welcome');
@@ -164,6 +189,7 @@ passport.use(new LocalStrategy(
       done(null, false);
   }
 ));
+
 
 app.post(
   '/auth/login',
