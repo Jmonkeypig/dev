@@ -1,10 +1,42 @@
+<!DOCTYPE html>
 <html>
   <head>
+  <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
   <title><%= title %></title>
     <link rel="stylesheet" type="text/css" href="css/style.css">
   </head>
   <body>
     <h1>Hello , <%= username %></h1>
     <a href="/auth/logout">logout</a>
+    <p id="aTag">query Test</p>
+    <div>
+      <button onclick="ClickTest()">Hello</button>
+    </div>
   </body>
 </html>
+
+
+<script>
+var testBool = true;
+
+$("#aTag").click(function() {
+
+  if(testBool){
+    var htmlString = $( this ).html();
+    $( this ).text("aaaaaaaaaaaa" );
+  }else{
+    var htmlString = $( this ).html();
+    $( this ).text("query Test" );
+  }
+  testBool = !testBool;
+
+});
+
+
+ClickTest = function(){
+  console.log("Click!");
+}
+  // function ClickTest(){
+  //   console.log("Click!");
+  // }
+</script>

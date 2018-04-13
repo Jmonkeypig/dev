@@ -222,4 +222,5 @@ app.get('/auth/login', function(req, res){
 });
 app.listen(3003, function(){
   console.log('Connected 3003 port!!!');
+  // console.log(process.env.SystemDrive); 
 });
