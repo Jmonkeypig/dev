@@ -1,7 +1,7 @@
 var express = require('express');
 var cookieParser = require('cookie-parser');
 var session = require('express-session');
-var FileStore = require('session-file-store')(session);
+// var FileStore = require('session-file-store')(session);
 var MySQLStore = require('express-mysql-session')(session);
 
 var bodyParser = require('body-parser');
@@ -9,6 +9,15 @@ var bkfd2Password = require("pbkdf2-password");
 var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
 var hasher = bkfd2Password();
+var mysql = require('mysql');
+var conn = mysql.createConnection({
+  host     : 'localhost',
+  user     : 'root',
+  password : '123456',
+  database : 'o2'
+});
+conn.connect();
+
 var app = express();
 
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -22,7 +31,14 @@ app.use(session({
   secret: '1234DSFs@adf1234!@#$asd',
   resave: false,
   saveUninitialized: true,
-  store: new FileStore()
+  //store: new FileStore()
+  store:new MySQLStore({
+   host:'localhost',
+   port:3306,
+   user:'root',
+   password:'123456',
+   database:'o2'
+ })
 }));
 app.use(passport.initialize());
 app.use(passport.session());
@@ -67,17 +83,27 @@ app.get('/welcome', function(req, res){
 app.post('/auth/register', function(req, res){
   hasher({password:req.body.password}, function(err, pass, salt, hash){
     var user = {
+      authId : 'local'+ req.body.username,
       username:req.body.username,
       password:hash,
       salt:salt,
       displayName:req.body.displayName
     };
-    users.push(user);
-    req.login(user, function(err){
-      req.session.save(function(){
+    var sql = 'INSERT INTO users SET ?';
+    conn.query(sql, user, function(err, results){
+      if(err){
+        console.log(err);
+        res.status(500);
+      }else{
         res.redirect('/welcome');
-      });
+      }
     });
+    // users.push(user);
+    // req.login(user, function(err){
+    //   req.session.save(function(){
+    //     res.redirect('/welcome');
+    //   });
+    // });
   });
 });
 
